@@ -53,16 +53,18 @@ export async function generateDraftDayPlan(userId: string, dateString: string): 
   ]);
 
   // Ensure external tasks are mirrored into the Task table for planning.
-  for (const ext of externalTasks) {
-    await upsertExternalTaskIntoOmniTask(userId, ext.provider, {
-      externalId: ext.externalId,
-      title: ext.title,
-      status: ext.status,
-      due: ext.due || undefined,
-      projectName: ext.projectName || undefined,
-      dataJSON: (ext.dataJSON as Record<string, unknown> | null) || undefined
-    });
-  }
+  await Promise.all(
+    externalTasks.map((ext) =>
+      upsertExternalTaskIntoOmniTask(userId, ext.provider, {
+        externalId: ext.externalId,
+        title: ext.title,
+        status: ext.status,
+        due: ext.due || undefined,
+        projectName: ext.projectName || undefined,
+        dataJSON: (ext.dataJSON as Record<string, unknown> | null) || undefined
+      })
+    )
+  );
 
   const tasks = await prisma.task.findMany({
     where: { userId, status: 'TODO' },

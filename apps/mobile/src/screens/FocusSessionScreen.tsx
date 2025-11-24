@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { View, Text, StyleSheet, Button, TextInput, Alert } from 'react-native';
 import { startFocusBlock, endFocusBlock, getFocusCurrentStatus } from '../api/focus';
 
+type IntervalHandle = ReturnType<typeof setInterval> | null;
+
 export default function FocusSessionScreen() {
   const [blockId, setBlockId] = useState<string | null>(null);
   const [taskId, setTaskId] = useState<string | undefined>(undefined);
@@ -9,25 +11,30 @@ export default function FocusSessionScreen() {
   const [expectedCategory, setExpectedCategory] = useState<'PRODUCTIVITY' | 'SOCIAL' | 'ENTERTAINMENT' | 'OTHER' | undefined>('PRODUCTIVITY');
   const [elapsed, setElapsed] = useState(0);
   const [warning, setWarning] = useState<string | null>(null);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
-  const pollRef = useRef<NodeJS.Timeout | null>(null);
+  const intervalRef = useRef<IntervalHandle>(null);
+  const pollRef = useRef<IntervalHandle>(null);
 
   useEffect(() => {
-    startTimer();
-    startPolling();
     return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-      if (pollRef.current) clearInterval(pollRef.current);
+      stopTimer();
+      stopPolling();
     };
   }, []);
 
   const startTimer = () => {
-    if (intervalRef.current) clearInterval(intervalRef.current);
+    stopTimer();
     intervalRef.current = setInterval(() => setElapsed((e) => e + 1), 1000);
   };
 
+  const stopTimer = () => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+  };
+
   const startPolling = () => {
-    if (pollRef.current) clearInterval(pollRef.current);
+    stopPolling();
     pollRef.current = setInterval(async () => {
       try {
         const status = await getFocusCurrentStatus();
@@ -37,6 +44,13 @@ export default function FocusSessionScreen() {
         // ignore
       }
     }, 15000);
+  };
+
+  const stopPolling = () => {
+    if (pollRef.current) {
+      clearInterval(pollRef.current);
+      pollRef.current = null;
+    }
   };
 
   const onStart = async () => {
@@ -64,7 +78,8 @@ export default function FocusSessionScreen() {
       await endFocusBlock(blockId);
       setWarning(null);
       setBlockId(null);
-      if (intervalRef.current) clearInterval(intervalRef.current);
+      stopTimer();
+      stopPolling();
     } catch (err) {
       Alert.alert('Error', (err as Error).message || 'Could not end focus');
     }
