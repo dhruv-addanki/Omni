@@ -33,33 +33,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = async (email: string, password: string) => {
-    setLoading(true);
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error || !data.session?.access_token) throw error || new Error('Login failed');
-      await saveToken(data.session.access_token);
-      setUser(await fetchMe());
-    } finally {
-      setLoading(false);
-    }
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error || !data.session?.access_token) throw error || new Error('Login failed');
+    await saveToken(data.session.access_token);
+    setUser(await fetchMe());
   };
 
   const register = async (email: string, password: string, name: string) => {
-    setLoading(true);
-    try {
-      const [firstName, ...rest] = name.trim().split(' ');
-      const lastName = rest.join(' ').trim() || undefined;
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: { data: { name: name.trim(), firstName, lastName } }
-      });
-      if (error || !data.session?.access_token) throw error || new Error('Register failed');
-      await saveToken(data.session.access_token);
-      setUser(await fetchMe());
-    } finally {
-      setLoading(false);
-    }
+    const [firstName, ...rest] = name.trim().split(' ');
+    const lastName = rest.join(' ').trim() || undefined;
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { data: { name: name.trim(), firstName, lastName } }
+    });
+    if (error || !data.session?.access_token) throw error || new Error('Register failed');
+    await saveToken(data.session.access_token);
+    setUser(await fetchMe());
   };
 
   const logout = async () => {
