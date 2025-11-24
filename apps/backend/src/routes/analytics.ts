@@ -20,9 +20,8 @@ analyticsRouter.get('/weekly', async (req, res) => {
     days.push(date);
   }
 
-  const metrics = [];
+  const results = [];
   for (const date of days) {
-    // Ensure aggregation exists; compute on the fly if missing.
     const { start } = getDayRange(date);
     let dm = await prisma.dailyMetrics.findUnique({
       where: { userId_date: { userId, date: start } }
@@ -30,16 +29,18 @@ analyticsRouter.get('/weekly', async (req, res) => {
     if (!dm) {
       dm = await aggregateDailyMetrics(userId, start);
     }
-    metrics.push(dm);
+    const reflection = await prisma.dailyReflection.findFirst({ where: { userId, date: start } });
+    results.push({
+      date: start.toISOString().split('T')[0],
+      tasksPlanned: dm.tasksPlanned,
+      tasksCompleted: dm.tasksCompleted,
+      focusMinutes: dm.focusMinutes,
+      reflectionRating: reflection ? reflection.rating : null,
+      aiSummary: reflection?.aiSummary || null
+    });
   }
 
-  const streaks = {
-    reflection: await getHabitStreak(userId, 'REFLECTION_DONE'),
-    dayPlan: await getHabitStreak(userId, 'DAY_PLAN_CONFIRMED'),
-    focus60: await getHabitStreak(userId, 'FOCUS_60')
-  };
-
-  return res.json({ metrics: metrics.reverse(), streaks });
+  return res.json(results.reverse());
 });
 
 // Tasks for a specific date (used by daily detail)
