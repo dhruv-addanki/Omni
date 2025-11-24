@@ -78,7 +78,7 @@ export async function login(email: string, password: string) {
   return res.user;
 }
 
-export async function register(email: string, password: string, name?: string) {
+export async function register(email: string, password: string, name: string) {
   const res = await api.post<{ token: string; user: User }>('/auth/register', {
     email,
     password,

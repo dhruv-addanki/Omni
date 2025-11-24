@@ -6,7 +6,7 @@ interface AuthContextValue {
   user: { id: string; email: string; name?: string | null } | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, name?: string) => Promise<void>;
+  register: (email: string, password: string, name: string) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -44,13 +44,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const register = async (email: string, password: string, name?: string) => {
+  const register = async (email: string, password: string, name: string) => {
     setLoading(true);
     try {
+      const [firstName, ...rest] = name.trim().split(' ');
+      const lastName = rest.join(' ').trim() || undefined;
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
-        options: { data: { name } }
+        options: { data: { name: name.trim(), firstName, lastName } }
       });
       if (error || !data.session?.access_token) throw error || new Error('Register failed');
       await saveToken(data.session.access_token);
