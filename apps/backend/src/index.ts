@@ -10,6 +10,7 @@ import analyticsRouter from './routes/analytics';
 import planningRouter from './routes/planning';
 import screenTimeRouter from './routes/screenTime';
 import focusBlocksRouter from './routes/focusBlocks';
+import aiRouter from './routes/ai';
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -29,6 +30,7 @@ app.use('/analytics', analyticsRouter);
 app.use('/planning', planningRouter);
 app.use('/screen-time', screenTimeRouter);
 app.use('/focus-blocks', focusBlocksRouter);
+app.use('/ai', aiRouter);
 app.use(userRouter);
 
 // Simple error handler

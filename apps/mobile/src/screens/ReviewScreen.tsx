@@ -10,6 +10,7 @@ export default function ReviewScreen() {
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
   const [hasReflection, setHasReflection] = useState(false);
+  const [aiSummary, setAiSummary] = useState<string | null>(null);
 
   const load = async () => {
     setFetching(true);
@@ -18,10 +19,12 @@ export default function ReviewScreen() {
       setHasReflection(true);
       setRating(existing.rating);
       setNotes(existing.notes);
+      setAiSummary((existing as any).aiSummary || null);
     } catch (_err) {
       setHasReflection(false);
       setRating(5);
       setNotes('');
+      setAiSummary(null);
     } finally {
       setFetching(false);
     }
@@ -58,6 +61,12 @@ export default function ReviewScreen() {
       <Text style={styles.status}>
         {hasReflection ? 'Reflection complete for today' : 'Pending reflection for today'}
       </Text>
+      {aiSummary && (
+        <View style={styles.summaryBox}>
+          <Text style={styles.label}>AI summary</Text>
+          <Text style={styles.cardBody}>{aiSummary}</Text>
+        </View>
+      )}
       <Text style={styles.label}>How did today go? ({rating}/10)</Text>
       <Slider
         minimumValue={1}
@@ -85,6 +94,14 @@ const styles = StyleSheet.create({
   title: { fontSize: 22, fontWeight: '700', marginBottom: 12 },
   status: { color: '#475569', marginBottom: 8 },
   label: { fontWeight: '600', marginTop: 12, marginBottom: 6 },
+  summaryBox: {
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    padding: 10,
+    borderWidth: 1,
+    borderColor: '#e2e8f0'
+  },
+  cardBody: { color: '#475569' },
   input: {
     backgroundColor: '#fff',
     borderRadius: 8,

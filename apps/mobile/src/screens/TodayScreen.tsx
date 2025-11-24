@@ -1,12 +1,15 @@
 import { useEffect, useState } from 'react';
-import { View, Text, FlatList, StyleSheet, ActivityIndicator, RefreshControl } from 'react-native';
+import { View, Text, FlatList, StyleSheet, ActivityIndicator, RefreshControl, Button, Alert } from 'react-native';
 import { fetchDashboard, Dashboard } from '../api/client';
+import { fetchNextBestAction } from '../api/ai';
 
 export default function TodayScreen() {
   const [dashboard, setDashboard] = useState<Dashboard | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [nextAction, setNextAction] = useState<string | null>(null);
+  const [nextActionLoading, setNextActionLoading] = useState(false);
 
   const load = async () => {
     setError(null);
@@ -24,6 +27,18 @@ export default function TodayScreen() {
   useEffect(() => {
     load();
   }, []);
+
+  const fetchAction = async () => {
+    setNextActionLoading(true);
+    try {
+      const res = await fetchNextBestAction();
+      setNextAction(res.action);
+    } catch (err) {
+      Alert.alert('Error', (err as Error).message || 'Could not fetch next action');
+    } finally {
+      setNextActionLoading(false);
+    }
+  };
 
   const renderTask = ({ item }: { item: Dashboard['tasks'][number] }) => (
     <View style={styles.taskItem}>
@@ -57,6 +72,11 @@ export default function TodayScreen() {
         <Text style={styles.cardBody}>
           {dashboard?.reflection ? 'Reflection complete for today' : 'Pending reflection'}
         </Text>
+      </View>
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>What should I do now?</Text>
+        {nextAction ? <Text style={styles.cardBody}>{nextAction}</Text> : <Text style={styles.cardBody}>Tap to get a nudge.</Text>}
+        <Button title={nextActionLoading ? 'Thinking...' : 'Get next action'} onPress={fetchAction} disabled={nextActionLoading} />
       </View>
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Today’s tasks</Text>
