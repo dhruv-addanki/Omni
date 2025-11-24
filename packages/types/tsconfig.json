@@ -1,0 +1,10 @@
+{
+  "extends": "@omni/config/tsconfig",
+  "compilerOptions": {
+    "outDir": "dist",
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "stripInternal": true
+  },
+  "include": ["src/**/*"]
+}

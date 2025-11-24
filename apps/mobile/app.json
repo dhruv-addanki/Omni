@@ -1,0 +1,24 @@
+{
+  "expo": {
+    "name": "Omni",
+    "slug": "omni",
+    "version": "0.0.1",
+    "orientation": "portrait",
+    "splash": {
+      "backgroundColor": "#e0f2fe"
+    },
+    "updates": {
+      "fallbackToCacheTimeout": 0
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#e0f2fe"
+      }
+    },
+    "web": {}
+  }
+}

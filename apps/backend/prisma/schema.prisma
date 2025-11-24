@@ -1,0 +1,155 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum AlarmMode {
+  STRICT
+  LIGHT
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  DONE
+}
+
+enum TaskSource {
+  OMNI
+  NOTION
+  ASANA
+  CALENDAR
+}
+
+enum AppCategory {
+  SOCIAL
+  PRODUCTIVITY
+  ENTERTAINMENT
+  OTHER
+}
+
+enum IntegrationProvider {
+  GOOGLE_CALENDAR
+  NOTION
+  ASANA
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  alarmSettings          AlarmSetting[]
+  tasks                  Task[]
+  focusBlocks            FocusBlock[]
+  screenTimeEvents       ScreenTimeEvent[]
+  dailyReflections       DailyReflection[]
+  integrationConnections IntegrationConnection[]
+}
+
+model AlarmSetting {
+  id          String    @id @default(uuid())
+  userId      String
+  wakeTime    DateTime
+  mode        AlarmMode
+  nextAlarmAt DateTime
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Task {
+  id             String      @id @default(uuid())
+  userId         String
+  title          String
+  description    String?
+  status         TaskStatus  @default(TODO)
+  source         TaskSource  @default(OMNI)
+  scheduledStart DateTime?
+  scheduledEnd   DateTime?
+  actualStart    DateTime?
+  actualEnd      DateTime?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  focusBlocks FocusBlock[]
+
+  @@index([userId])
+  @@index([userId, status])
+  @@index([userId, scheduledStart])
+}
+
+model FocusBlock {
+  id           String   @id @default(uuid())
+  userId       String
+  taskId       String?
+  plannedStart DateTime
+  plannedEnd   DateTime
+  actualStart  DateTime?
+  actualEnd    DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  task Task? @relation(fields: [taskId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([taskId])
+  @@index([userId, plannedStart])
+}
+
+model ScreenTimeEvent {
+  id         String      @id @default(uuid())
+  userId     String
+  appName    String
+  appCategory AppCategory
+  startedAt  DateTime
+  endedAt    DateTime
+  createdAt  DateTime    @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, startedAt])
+}
+
+model DailyReflection {
+  id         String    @id @default(uuid())
+  userId     String
+  date       DateTime  @db.Date
+  rating     Int
+  notes      String    @db.Text
+  aiSummary  String?   @db.Text
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+  @@index([userId])
+}
+
+model IntegrationConnection {
+  id           String               @id @default(uuid())
+  userId       String
+  provider     IntegrationProvider
+  accessToken  String
+  refreshToken String
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, provider])
+  @@index([userId])
+}

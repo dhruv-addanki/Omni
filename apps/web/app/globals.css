@@ -1,0 +1,53 @@
+:root {
+  color: #0f172a;
+  background: #f8fafc;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  min-height: 100vh;
+}
+
+.page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at 20% 20%, #e0f2fe, #f8fafc 35%),
+    radial-gradient(circle at 80% 0%, #c7d2fe, #f8fafc 30%);
+  padding: 2rem;
+}
+
+.card {
+  background: white;
+  padding: 2rem 2.5rem;
+  border-radius: 16px;
+  box-shadow: 0 15px 60px rgba(15, 23, 42, 0.08);
+  max-width: 520px;
+  width: 100%;
+  text-align: left;
+}
+
+.eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.75rem;
+  color: #64748b;
+  margin-bottom: 0.5rem;
+}
+
+h1 {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+}
+
+p {
+  color: #475569;
+  line-height: 1.5;
+}

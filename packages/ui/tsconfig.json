@@ -1,0 +1,10 @@
+{
+  "extends": "@omni/config/tsconfig",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "outDir": "dist",
+    "declaration": true,
+    "emitDeclarationOnly": true
+  },
+  "include": ["src/**/*"]
+}

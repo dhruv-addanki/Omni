@@ -1,0 +1,10 @@
+{
+  "extends": "@omni/config/tsconfig",
+  "compilerOptions": {
+    "jsx": "react-native",
+    "types": ["react", "react-native"],
+    "allowJs": true
+  },
+  "include": ["**/*.ts", "**/*.tsx"],
+  "exclude": ["node_modules"]
+}
