@@ -90,11 +90,31 @@ export default function FocusSessionScreen() {
       <Text style={styles.title}>Focus session</Text>
       {warning && <Text style={styles.warning}>{warning}</Text>}
       <Text style={styles.label}>Task ID (optional)</Text>
-      <TextInput style={styles.input} value={taskId} onChangeText={setTaskId} placeholder="Task ID" />
+      <TextInput
+        style={styles.input}
+        value={taskId || ''}
+        onChangeText={(text) => setTaskId(text || undefined)}
+        placeholder="Task ID"
+      />
       <Text style={styles.label}>Expected app (optional)</Text>
-      <TextInput style={styles.input} value={expectedApp} onChangeText={setExpectedApp} placeholder="e.g. Notion" />
+      <TextInput
+        style={styles.input}
+        value={expectedApp}
+        onChangeText={setExpectedApp}
+        placeholder="e.g. Notion"
+      />
       <Text style={styles.label}>Expected category</Text>
-      <TextInput style={styles.input} value={expectedCategory} onChangeText={(text) => setExpectedCategory(text as any)} placeholder="PRODUCTIVITY" />
+      <TextInput
+        style={styles.input}
+        value={expectedCategory || 'PRODUCTIVITY'}
+        onChangeText={(text) => {
+          const normalized = text.toUpperCase();
+          if (['SOCIAL', 'PRODUCTIVITY', 'ENTERTAINMENT', 'OTHER'].includes(normalized)) {
+            setExpectedCategory(normalized as any);
+          }
+        }}
+        placeholder="PRODUCTIVITY"
+      />
       <Text style={styles.elapsed}>Elapsed: {Math.floor(elapsed / 60)}m {elapsed % 60}s</Text>
       <View style={styles.row}>
         <Button title="Start focus" onPress={onStart} />

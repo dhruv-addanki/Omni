@@ -47,9 +47,11 @@ router.post('/daily-summary', async (req, res) => {
 });
 
 router.get('/daily-summary', async (req, res) => {
-  const date = (req.query.date as string) || new Date().toISOString().split('T')[0];
+  const dateParam = (req.query.date as string) || new Date().toISOString().split('T')[0];
+  const date = new Date(dateParam);
+  date.setHours(0, 0, 0, 0);
   const reflection = await prisma.dailyReflection.findFirst({
-    where: { userId: req.user!.userId, date: new Date(date) }
+    where: { userId: req.user!.userId, date }
   });
   return res.json({ aiSummary: reflection?.aiSummary || null });
 });
@@ -70,9 +72,11 @@ router.post('/plan-critique', async (req, res) => {
 });
 
 router.get('/plan-critique', async (req, res) => {
-  const date = (req.query.date as string) || new Date().toISOString().split('T')[0];
+  const dateParam = (req.query.date as string) || new Date().toISOString().split('T')[0];
+  const date = new Date(dateParam);
+  date.setHours(0, 0, 0, 0);
   const critique = await prisma.planCritique.findUnique({
-    where: { userId_date: { userId: req.user!.userId, date: new Date(date) } }
+    where: { userId_date: { userId: req.user!.userId, date } }
   });
   return res.json({ critique: critique?.critique || null });
 });
