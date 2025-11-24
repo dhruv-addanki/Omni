@@ -3,6 +3,7 @@ import { getDayRange, parseLocalDateString } from '../utils/dates';
 import { computeDailyStats } from './analytics';
 import { generateText } from './aiClient';
 import { AIJobType } from '@prisma/client';
+import { getHabitStreak } from './dailyMetrics';
 
 interface DayContext {
   date: Date;
@@ -192,4 +193,40 @@ export async function runJob(userId: string, type: AIJobType, payload: any) {
     default:
       throw new Error('Unknown job type');
   }
+}
+
+export async function generateWeeklyChangeBrief(userId: string, endDate: string) {
+  const end = parseLocalDateString(endDate) || new Date(endDate);
+  const startPrev = new Date(end);
+  startPrev.setDate(end.getDate() - 13);
+
+  const metrics = await prisma.dailyMetrics.findMany({
+    where: { userId, date: { gte: startPrev, lte: end } },
+    orderBy: { date: 'asc' }
+  });
+
+  const lastWeek = metrics.slice(-7);
+  const prevWeek = metrics.slice(-14, -7);
+
+  const avg = (arr: number[]) => (arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0);
+  const summarize = (ms: typeof metrics) => ({
+    tasksCompleted: avg(ms.map((m) => m.tasksCompleted)),
+    focus: avg(ms.map((m) => m.focusMinutes)),
+    distraction: avg(ms.map((m) => m.distractionMinutes)),
+    reflections: avg(ms.map((m) => (m.reflectionDone ? 1 : 0))) * 100,
+    plans: avg(ms.map((m) => (m.dayPlanConfirmed ? 1 : 0))) * 100
+  });
+
+  const last = summarize(lastWeek);
+  const prev = summarize(prevWeek);
+
+  const prompt = [
+    'You are Omni, generate a concise “what changed this week?” brief.',
+    `Last week (avg): tasks ${last.tasksCompleted.toFixed(1)}, focus min ${last.focus.toFixed(1)}, distraction min ${last.distraction.toFixed(1)}, reflection adherence ${last.reflections.toFixed(0)}%, day-plan adherence ${last.plans.toFixed(0)}%.`,
+    `Prev week (avg): tasks ${prev.tasksCompleted.toFixed(1)}, focus min ${prev.focus.toFixed(1)}, distraction min ${prev.distraction.toFixed(1)}, reflection adherence ${prev.reflections.toFixed(0)}%, day-plan adherence ${prev.plans.toFixed(0)}%.`,
+    'Call out notable increases/decreases and one suggestion. Keep under 100 words. Avoid judgmental tone.',
+    safetyInstructions()
+  ].join('\n');
+
+  return generateText(prompt, { maxTokens: 200, temperature: 0.5 });
 }

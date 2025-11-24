@@ -11,6 +11,7 @@ import {
   runJob
 } from '../services/aiCoach';
 import { AIJobStatus, AIJobType } from '@prisma/client';
+import { generateWeeklyChangeBrief } from '../services/aiCoach';
 
 const router = Router();
 router.use(requireSupabaseAuth);
@@ -161,6 +162,16 @@ router.post('/jobs/run-once', async (_req, res) => {
     }
   }
   return res.json({ processed: results.length, results });
+});
+
+router.get('/weekly-change-brief', async (req, res) => {
+  const endDate = (req.query.endDate as string) || new Date().toISOString().split('T')[0];
+  try {
+    const brief = await generateWeeklyChangeBrief(req.user!.userId, endDate);
+    return res.json({ brief });
+  } catch (err) {
+    return res.status(503).json({ error: 'Unavailable' });
+  }
 });
 
 export default router;

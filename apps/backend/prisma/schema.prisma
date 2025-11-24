@@ -68,6 +68,19 @@ enum AIJobType {
   TASK_REWRITE
 }
 
+enum HabitMetricKey {
+  REFLECTION_DONE
+  DAY_PLAN_CONFIRMED
+  FOCUS_MINUTES
+  TASKS_COMPLETED
+}
+
+enum HabitOperator {
+  GTE
+  LTE
+  EQ
+}
+
 enum IntegrationProvider {
   GOOGLE_CALENDAR
   OUTLOOK_CALENDAR
@@ -237,6 +250,59 @@ model HabitInsight {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, rangeStart, rangeEnd])
+}
+
+model DailyMetrics {
+  id                 String   @id @default(uuid())
+  userId             String
+  date               DateTime @db.Date
+  tasksPlanned       Int      @default(0)
+  tasksCompleted     Int      @default(0)
+  focusMinutes       Int      @default(0)
+  distractionMinutes Int      @default(0)
+  sleepMinutes       Int?
+  reflectionDone     Boolean  @default(false)
+  dayPlanConfirmed   Boolean  @default(false)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+  @@index([userId, date])
+}
+
+model HabitDefinition {
+  id          String          @id @default(uuid())
+  userId      String?
+  key         String
+  name        String
+  description String?
+  metric      HabitMetricKey
+  operator    HabitOperator   @default(GTE)
+  threshold   Int             @default(1)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, key])
+}
+
+model HabitStatus {
+  id          String   @id @default(uuid())
+  userId      String
+  habitKey    String
+  date        DateTime @db.Date
+  met         Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, habitKey, date])
+  @@index([userId, date])
+  @@index([userId, habitKey])
 }
 
 model DailyReflection {
