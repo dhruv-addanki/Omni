@@ -7,6 +7,7 @@
     "splash": {
       "backgroundColor": "#e0f2fe"
     },
+    "plugins": ["expo-notifications"],
     "updates": {
       "fallbackToCacheTimeout": 0
     },

@@ -42,6 +42,7 @@ model User {
   id        String   @id @default(uuid())
   email     String   @unique
   name      String?
+  passwordHash String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -65,6 +66,7 @@ model AlarmSetting {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+  @@unique([userId])
 }
 
 model Task {
@@ -151,5 +153,17 @@ model IntegrationConnection {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, provider])
+  @@index([userId])
+}
+
+model DayPlanConfirmation {
+  id          String   @id @default(uuid())
+  userId      String
+  date        DateTime @db.Date
+  confirmedAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
   @@index([userId])
 }

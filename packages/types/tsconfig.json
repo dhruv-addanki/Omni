@@ -1,5 +1,5 @@
 {
-  "extends": "@omni/config/tsconfig",
+  "extends": "../config/tsconfig/base.json",
   "compilerOptions": {
     "outDir": "dist",
     "declaration": true,

@@ -1,45 +1,58 @@
+import 'react-native-gesture-handler';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { NavigationContainer } from '@react-navigation/native';
 import { StatusBar } from 'expo-status-bar';
-import { SafeAreaView, StyleSheet, Text, View } from 'react-native';
+import * as Notifications from 'expo-notifications';
+import { useEffect } from 'react';
+import AppNavigator from './src/navigation/AppNavigator';
+import { AuthProvider } from './src/context/AuthContext';
+import { navigationRef, navigate, flushPendingNavigation } from './src/navigation/navigationRef';
+import { useAuth } from './src/context/AuthContext';
+import { getDayPlanStatus } from './src/api/dayPlan';
+
+function NotificationHandler() {
+  const { user } = useAuth();
+
+  useEffect(() => {
+    const handleResponse = async () => {
+      if (!user) return;
+      try {
+        const status = await getDayPlanStatus();
+        if (!status.confirmed) {
+          navigate('WakeUp', undefined);
+        }
+      } catch (_err) {
+        // If status check fails, still navigate to be safe.
+        navigate('WakeUp', undefined);
+      }
+    };
+
+    const sub = Notifications.addNotificationResponseReceivedListener(handleResponse);
+
+    Notifications.getLastNotificationResponseAsync().then((response) => {
+      if (response && user) {
+        handleResponse();
+      }
+    });
+
+    return () => {
+      sub.remove();
+    };
+  }, [user]);
+
+  return null;
+}
 
 export default function App() {
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.card}>
-        <Text style={styles.title}>Omni Mobile</Text>
-        <Text style={styles.subtitle}>Alarms, reviews, and focus on the go.</Text>
-      </View>
-      <StatusBar style="auto" />
-    </SafeAreaView>
+    <SafeAreaProvider>
+      <AuthProvider>
+        <NavigationContainer ref={navigationRef} onReady={flushPendingNavigation}>
+          <StatusBar style="auto" />
+          <AppNavigator />
+          <NotificationHandler />
+        </NavigationContainer>
+      </AuthProvider>
+    </SafeAreaProvider>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#e0f2fe',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 24
-  },
-  card: {
-    backgroundColor: '#fff',
-    padding: 24,
-    borderRadius: 16,
-    width: '100%',
-    maxWidth: 420,
-    shadowColor: '#000',
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 10 },
-    elevation: 6
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '700',
-    marginBottom: 8
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#334155'
-  }
-});

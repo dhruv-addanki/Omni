@@ -4,13 +4,15 @@ import { ReactNode } from 'react';
 
 export const metadata: Metadata = {
   title: 'Omni Web Dashboard',
-  description: 'Omni web dashboard coming soon'
+  description: 'Omni dashboard for reflections and analytics'
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body className="bg-slate-50 text-slate-900">
+        {children}
+      </body>
     </html>
   );
 }
