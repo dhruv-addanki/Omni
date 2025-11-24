@@ -92,4 +92,38 @@ alarmsRouter.post('/log', async (req, res) => {
   return res.status(201).json(event);
 });
 
+alarmsRouter.post('/wake-unlock', async (req, res) => {
+  const { start, end } = getDayRange();
+  const userId = req.user!.userId;
+
+  const plan = await prisma.dayPlan.findFirst({
+    where: { userId, date: start, confirmedAt: { not: null } }
+  });
+
+  if (!plan) {
+    return res.status(400).json({ error: 'Day plan required before wake unlock', code: 'DAY_PLAN_REQUIRED' });
+  }
+
+  const alarm = await prisma.alarmSetting.findFirst({
+    where: { userId, nextAlarmAt: { gte: start, lte: end } },
+    orderBy: { nextAlarmAt: 'asc' }
+  });
+
+  const updatedPlan = await prisma.dayPlan.update({
+    where: { id: plan.id },
+    data: { wakeConfirmedAt: plan.wakeConfirmedAt || new Date() }
+  });
+
+  await prisma.alarmLog.create({
+    data: {
+      userId,
+      alarmId: alarm?.id,
+      type: AlarmEventType.WAKE_UNLOCK,
+      metadata: { date: start.toISOString().split('T')[0] }
+    }
+  });
+
+  return res.json({ ok: true, plan: updatedPlan });
+});
+
 export default alarmsRouter;

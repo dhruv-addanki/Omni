@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Button, FlatList, TouchableOpacity, TextInput, Alert } from 'react-native';
-import { fetchDashboard, createTask } from '../api/client';
-import { confirmDayPlan, getDayPlanStatus } from '../api/dayPlan';
+import { View, Text, StyleSheet, Button, FlatList, TouchableOpacity, TextInput, Alert, ActivityIndicator } from 'react-native';
+import { fetchDashboard } from '../api/client';
+import { confirmDayPlan, getDayPlanStatus, getTaskSuggestions, wakeUnlock } from '../api/dayPlan';
 import { todayLocalDateString } from '../utils/date';
+import type { DayPlanStatus } from '../api/dayPlan';
 
 interface TopTask {
   id?: string;
@@ -15,17 +16,41 @@ export default function WakeUpScreen() {
   const [newTasks, setNewTasks] = useState<string[]>(['', '', '']);
   const [loading, setLoading] = useState(true);
   const [confirmedToday, setConfirmedToday] = useState(false);
+  const [planStatus, setPlanStatus] = useState<DayPlanStatus | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const load = async () => {
     setLoading(true);
+    setError(null);
     try {
-      const [dashboard, status] = await Promise.all([fetchDashboard(), getDayPlanStatus()]);
+      const today = todayLocalDateString();
+      const [dashboard, status, suggestions] = await Promise.all([
+        fetchDashboard(),
+        getDayPlanStatus(today),
+        getTaskSuggestions(today)
+      ]);
       const existing = (dashboard.tasks || []).map((t) => ({ id: t.id, title: t.title }));
-      setTasks(existing);
-      setSelectedIds(new Set(existing.slice(0, 3).map((t) => t.id!))); // auto-select up to 3
+      const suggestionTasks = suggestions.suggestions || [];
+
+      // If plan already exists, preselect its top tasks.
+      if (status.plan?.tasks?.length) {
+        const planTasks = status.plan.tasks.map((t) => ({ id: t.task.id, title: t.task.title }));
+        setTasks(planTasks);
+        setSelectedIds(new Set(planTasks.map((t) => t.id!)));
+      } else if (suggestionTasks.length) {
+        setTasks(suggestionTasks.map((t) => ({ id: t.id, title: t.title })));
+        setSelectedIds(new Set(suggestionTasks.slice(0, 3).map((t) => t.id!)));
+      } else {
+        setTasks(existing);
+        setSelectedIds(new Set(existing.slice(0, 3).map((t) => t.id!)));
+      }
+
+      setPlanStatus(status);
       setConfirmedToday(status.confirmed);
     } catch (err) {
-      Alert.alert('Error', (err as Error).message || 'Failed to load dashboard');
+      const message = (err as Error).message || 'Failed to load dashboard';
+      setError(message);
+      Alert.alert('Error', message);
     } finally {
       setLoading(false);
     }
@@ -54,14 +79,28 @@ export default function WakeUpScreen() {
     }
 
     try {
-      const created = await Promise.all(
-        newTaskTitles.map((title) => createTask({ title }))
-      );
+      const topTasks = [
+        ...selectedExistingIds.map((id, idx) => ({ taskId: id, order: idx })),
+        ...newTaskTitles.map((title, idx) => ({ title, order: selectedExistingIds.length + idx }))
+      ];
 
-      // Optional: could mark selected tasks as pinned; for now just confirm day plan.
-      await confirmDayPlan(todayLocalDateString());
+      const result = await confirmDayPlan({ date: todayLocalDateString(), topTasks });
       setConfirmedToday(true);
-      Alert.alert('Day confirmed', 'Your top tasks are set.');
+      setPlanStatus((prev) => ({
+        ...(prev || { confirmed: true, compressed: false }),
+        confirmed: true,
+        plan: result.plan || null
+      }));
+
+      await wakeUnlock();
+
+      const compressed = result.plan?.compressed;
+      Alert.alert(
+        'Day confirmed',
+        compressed
+          ? 'Your plan is set and compressed because you started late.'
+          : 'Your top tasks are set.'
+      );
     } catch (err) {
       Alert.alert('Error', (err as Error).message || 'Could not confirm day plan');
     }
@@ -70,6 +109,7 @@ export default function WakeUpScreen() {
   if (loading) {
     return (
       <View style={styles.center}>
+        <ActivityIndicator />
         <Text>Loading...</Text>
       </View>
     );
@@ -79,7 +119,11 @@ export default function WakeUpScreen() {
     <View style={styles.container}>
       <Text style={styles.title}>Good morning ☀️</Text>
       <Text style={styles.subtitle}>Set your top tasks to start the day.</Text>
+      {planStatus?.compressed && (
+        <Text style={styles.warning}>You’re starting late, we’ve compressed your plan.</Text>
+      )}
       {confirmedToday && <Text style={styles.badge}>Day plan already confirmed</Text>}
+      {error && <Text style={styles.warning}>{error}</Text>}
 
       <Text style={styles.sectionTitle}>Today’s tasks</Text>
       <FlatList
@@ -149,5 +193,6 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     borderWidth: 1,
     borderColor: '#e2e8f0'
-  }
+  },
+  warning: { color: '#f97316', marginBottom: 8 }
 });

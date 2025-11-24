@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import prisma from '../lib/prisma';
 import { requireSupabaseAuth } from '../middleware/authSupabase';
+import { getDayRange, parseLocalDateString } from '../utils/dates';
 
 const tasksRouter = Router();
 
@@ -91,6 +92,46 @@ tasksRouter.patch('/:id', async (req, res) => {
 
   const updated = await prisma.task.findUnique({ where: { id } });
   return res.json(updated);
+});
+
+// Suggestions for top tasks: today's scheduled or recent TODOs.
+tasksRouter.get('/suggestions', async (req, res) => {
+  const dateParam = (req.query.date as string) || undefined;
+  const date = dateParam ? parseLocalDateString(dateParam) : null;
+  const target = date || new Date();
+  const { start, end } = getDayRange(target);
+
+  const tasks = await prisma.task.findMany({
+    where: {
+      userId: req.user!.userId,
+      status: 'TODO',
+      OR: [
+        { scheduledStart: { gte: start, lte: end } },
+        { scheduledEnd: { gte: start, lte: end } },
+        { actualStart: { gte: start, lte: end } },
+        { actualEnd: { gte: start, lte: end } }
+      ]
+    },
+    orderBy: [{ scheduledStart: 'asc' }, { createdAt: 'desc' }],
+    take: 10
+  });
+
+  // If not enough tasks, supplement with most recent TODOs.
+  if (tasks.length < 3) {
+    const filler = await prisma.task.findMany({
+      where: { userId: req.user!.userId, status: 'TODO' },
+      orderBy: { createdAt: 'desc' },
+      take: 10 - tasks.length
+    });
+    const merged = [...tasks];
+    const existingIds = new Set(tasks.map((t) => t.id));
+    for (const f of filler) {
+      if (!existingIds.has(f.id)) merged.push(f);
+    }
+    return res.json({ suggestions: merged.slice(0, 10) });
+  }
+
+  return res.json({ suggestions: tasks });
 });
 
 export default tasksRouter;
