@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Button, Alert, Platform } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import * as Notifications from 'expo-notifications';
-import { setAlarm, getCurrentAlarm, AlarmMode } from '../api/alarms';
+import { setAlarm, getCurrentAlarm, AlarmMode, logAlarmEvent } from '../api/alarms';
 import { api } from '../api/client';
 import { todayLocalDateString } from '../utils/date';
 
@@ -74,6 +74,7 @@ export default function AlarmScreen() {
     try {
       const wakeIso = wakeTime.toISOString();
       await setAlarm({ wakeTime: wakeIso, mode });
+      await logAlarmEvent({ type: 'SET', timestamp: wakeIso, metadata: { mode } });
       await scheduleNotification(wakeTime);
       setCurrentAlarm(wakeIso);
       Alert.alert('Alarm set', 'Your alarm has been scheduled.');

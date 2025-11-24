@@ -22,16 +22,20 @@ reflectionsRouter.post('/', async (req, res) => {
   }
 
   const { start } = getDayRange();
-  const existing = await prisma.dailyReflection.findFirst({
-    where: { userId: req.user!.userId, date: start }
-  });
 
-  if (existing) {
-    return res.status(409).json({ error: 'Reflection already exists for today' });
-  }
-
-  const reflection = await prisma.dailyReflection.create({
-    data: {
+  const reflection = await prisma.dailyReflection.upsert({
+    where: {
+      userId_date: {
+        userId: req.user!.userId,
+        date: start
+      }
+    },
+    update: {
+      rating: parsed.data.rating,
+      notes: parsed.data.notes,
+      aiSummary: parsed.data.aiSummary
+    },
+    create: {
       userId: req.user!.userId,
       date: start,
       rating: parsed.data.rating,

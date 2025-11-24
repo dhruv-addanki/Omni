@@ -53,6 +53,12 @@ export default function TodayScreen() {
         </Text>
       </View>
       <View style={styles.card}>
+        <Text style={styles.cardTitle}>Reflection</Text>
+        <Text style={styles.cardBody}>
+          {dashboard?.reflection ? 'Reflection complete for today' : 'Pending reflection'}
+        </Text>
+      </View>
+      <View style={styles.card}>
         <Text style={styles.cardTitle}>Today’s tasks</Text>
         <FlatList
           data={dashboard?.tasks ?? []}

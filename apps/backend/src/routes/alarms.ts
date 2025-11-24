@@ -3,6 +3,7 @@ import { z } from 'zod';
 import prisma from '../lib/prisma';
 import { requireSupabaseAuth } from '../middleware/authSupabase';
 import { getDayRange } from '../utils/dates';
+import { AlarmEventType } from '@prisma/client';
 
 const alarmsRouter = Router();
 alarmsRouter.use(requireSupabaseAuth);
@@ -38,7 +39,7 @@ alarmsRouter.post('/', async (req, res) => {
   if (!reflection) {
     return res
       .status(400)
-      .json({ error: 'Nightly review required before setting an alarm.' });
+      .json({ error: 'Nightly review required before setting an alarm.', code: 'REFLECTION_REQUIRED' });
   }
 
   const alarm = await prisma.alarmSetting.upsert({
@@ -52,7 +53,43 @@ alarmsRouter.post('/', async (req, res) => {
     }
   });
 
+  await prisma.alarmLog.create({
+    data: {
+      userId: req.user!.userId,
+      alarmId: alarm.id,
+      type: AlarmEventType.SET,
+      metadata: { wakeTime, mode }
+    }
+  });
+
   return res.status(201).json(alarm);
+});
+
+const alarmLogSchema = z.object({
+  type: z.enum(['SET', 'SNOOZE', 'DISMISS']),
+  timestamp: z.string().datetime().optional(),
+  alarmId: z.string().uuid().optional(),
+  metadata: z.record(z.any()).optional()
+});
+
+alarmsRouter.post('/log', async (req, res) => {
+  const parsed = alarmLogSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'Invalid input', details: parsed.error.flatten() });
+  }
+
+  const { type, alarmId, timestamp, metadata } = parsed.data;
+  const event = await prisma.alarmLog.create({
+    data: {
+      userId: req.user!.userId,
+      alarmId,
+      type: type as AlarmEventType,
+      timestamp: timestamp ? new Date(timestamp) : undefined,
+      metadata
+    }
+  });
+
+  return res.status(201).json(event);
 });
 
 export default alarmsRouter;

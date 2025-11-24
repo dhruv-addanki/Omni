@@ -12,6 +12,12 @@ enum AlarmMode {
   LIGHT
 }
 
+enum AlarmEventType {
+  SET
+  SNOOZE
+  DISMISS
+}
+
 enum TaskStatus {
   TODO
   IN_PROGRESS
@@ -65,6 +71,7 @@ model AlarmSetting {
   updatedAt   DateTime  @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  logs AlarmLog[]
 
   @@index([userId])
   @@unique([userId])
@@ -155,6 +162,21 @@ model IntegrationConnection {
 
   @@unique([userId, provider])
   @@index([userId])
+}
+
+model AlarmLog {
+  id        String          @id @default(uuid())
+  userId    String
+  alarmId   String?
+  type      AlarmEventType
+  timestamp DateTime        @default(now())
+  metadata  Json?
+
+  user  User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  alarm AlarmSetting? @relation(fields: [alarmId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([alarmId])
 }
 
 model DayPlanConfirmation {

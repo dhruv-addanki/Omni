@@ -93,11 +93,15 @@ export async function fetchMe() {
 }
 
 export async function fetchDashboard() {
-  return api.get<Dashboard>('/me/dashboard');
+  return api.get<Dashboard>('/me/dashboard/today');
 }
 
 export async function createReflection(payload: { rating: number; notes: string }) {
   return api.post('/reflections', payload);
+}
+
+export async function fetchReflection(date: string) {
+  return api.get<{ id: string; rating: number; notes: string; aiSummary?: string | null }>(`/reflections/${date}`);
 }
 
 export async function createTask(payload: {

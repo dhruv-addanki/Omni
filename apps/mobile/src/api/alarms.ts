@@ -19,3 +19,12 @@ export async function getCurrentAlarm() {
 export async function setAlarm(payload: { wakeTime: string; mode: AlarmMode }) {
   return api.post<AlarmSetting>('/alarms', payload);
 }
+
+export async function logAlarmEvent(payload: {
+  type: 'SET' | 'SNOOZE' | 'DISMISS';
+  alarmId?: string;
+  timestamp?: string;
+  metadata?: Record<string, unknown>;
+}) {
+  return api.post('/alarms/log', payload);
+}

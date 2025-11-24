@@ -7,19 +7,8 @@ const userRouter = Router();
 
 userRouter.use(requireSupabaseAuth);
 
-userRouter.get('/me', async (req, res) => {
-  const user = await prisma.user.findUnique({
-    where: { id: req.user!.userId },
-    select: { id: true, email: true, name: true, createdAt: true }
-  });
-
-  if (!user) return res.status(404).json({ error: 'User not found' });
-  return res.json(user);
-});
-
-userRouter.get('/me/dashboard', async (req, res) => {
-  const { start, end } = getDayRange();
-  const userId = req.user!.userId;
+async function buildDashboard(userId: string, date: Date) {
+  const { start, end } = getDayRange(date);
 
   const [tasks, alarms, focusBlocks, screenTimeEvents, reflection] = await Promise.all([
     prisma.task.findMany({
@@ -52,13 +41,33 @@ userRouter.get('/me/dashboard', async (req, res) => {
     return acc + Math.max(duration, 0);
   }, 0);
 
-  return res.json({
+  return {
     tasks,
     alarms,
     focusBlocks,
     screenTime: { totalMs: screenTimeTotalMs },
     reflection
+  };
+}
+
+userRouter.get('/me', async (req, res) => {
+  const user = await prisma.user.findUnique({
+    where: { id: req.user!.userId },
+    select: { id: true, email: true, name: true, createdAt: true }
   });
+
+  if (!user) return res.status(404).json({ error: 'User not found' });
+  return res.json(user);
+});
+
+userRouter.get('/me/dashboard', async (req, res) => {
+  const dashboard = await buildDashboard(req.user!.userId, new Date());
+  return res.json(dashboard);
+});
+
+userRouter.get('/me/dashboard/today', async (req, res) => {
+  const dashboard = await buildDashboard(req.user!.userId, new Date());
+  return res.json(dashboard);
 });
 
 export default userRouter;
