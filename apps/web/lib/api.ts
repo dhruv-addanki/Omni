@@ -54,5 +54,18 @@ export const api = {
       actualBlocks: Array<{ id: string; start: string; end: string; taskId?: string | null }>;
       screenTimeEvents: Array<{ id: string; appName: string; category: string; start: string; end: string }>;
       summary: { plannedMinutes: number; actualMinutes: number; distractionMinutesDuringFocus: number };
-    }>(`/analytics/day-timeline?date=${date}`)
+    }>(`/analytics/day-timeline?date=${date}`),
+  getPlanningDay: (date: string) => request<{ date: string; plan: any; tasks: any[]; focusBlocks: any[]; events: any[] }>(`/planning/day?date=${date}`),
+  patchPlanningDay: (body: { date: string; tasks?: Array<{ taskId: string; order?: number }>; focusBlocks?: Array<{ id: string; plannedStart: string; plannedEnd: string }> }) =>
+    request('/planning/day', { method: 'PATCH', body: JSON.stringify(body) }),
+  resolveConflicts: (body: { date: string; focusBlocks: Array<{ id?: string; plannedStart: string; plannedEnd: string; taskId?: string }> }) =>
+    request<{ overlaps: any[]; eventConflicts: any[]; suggestions: string[] }>('/planning/resolve-conflicts', {
+      method: 'POST',
+      body: JSON.stringify(body)
+    }),
+  getReviewDay: (date: string) => request<{ reflection: any; planCritique: any; deviation: any }>(`/review/day?date=${date}`),
+  getSettings: () => request<any>('/settings'),
+  patchSettings: (body: any) => request<any>('/settings', { method: 'PATCH', body: JSON.stringify(body) }),
+  getIntegrations: () => request<any[]>('/integrations'),
+  getWeeklyChangeBrief: (endDate: string) => request<{ brief: string }>(`/ai/weekly-change-brief?endDate=${endDate}`)
 };

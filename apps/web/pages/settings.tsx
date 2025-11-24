@@ -1,26 +1,5 @@
 import { useEffect, useState } from 'react';
-
-async function fetchSettings() {
-  const res = await fetch('/settings');
-  if (!res.ok) throw new Error(await res.text());
-  return res.json();
-}
-
-async function saveSettings(body: any) {
-  const res = await fetch('/settings', {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body)
-  });
-  if (!res.ok) throw new Error(await res.text());
-  return res.json();
-}
-
-async function fetchIntegrations() {
-  const res = await fetch('/integrations');
-  if (!res.ok) throw new Error(await res.text());
-  return res.json();
-}
+import { api } from '../lib/api';
 
 export default function SettingsPage() {
   const [settings, setSettings] = useState<any>(null);
@@ -28,7 +7,7 @@ export default function SettingsPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    Promise.all([fetchSettings(), fetchIntegrations()])
+    Promise.all([api.getSettings(), api.getIntegrations()])
       .then(([s, i]) => {
         setSettings(s);
         setIntegrations(i);
@@ -38,7 +17,7 @@ export default function SettingsPage() {
 
   const updateNotifications = async (field: string, value: boolean) => {
     try {
-      const updated = await saveSettings({ notifications: { ...(settings?.notifications || {}), [field]: value } });
+      const updated = await api.patchSettings({ notifications: { ...(settings?.notifications || {}), [field]: value } });
       setSettings(updated);
     } catch (err) {
       setError((err as Error).message);

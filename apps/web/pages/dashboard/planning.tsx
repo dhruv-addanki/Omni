@@ -1,16 +1,11 @@
 import { useEffect, useState } from 'react';
+import { api } from '../../lib/api';
 
 interface PlanningDay {
   date: string;
   tasks: any[];
   focusBlocks: any[];
   events: any[];
-}
-
-async function fetchDay(date: string): Promise<PlanningDay> {
-  const res = await fetch(`/planning/day?date=${encodeURIComponent(date)}`);
-  if (!res.ok) throw new Error(await res.text());
-  return res.json();
 }
 
 export default function PlanningBoardPage() {
@@ -23,7 +18,7 @@ export default function PlanningBoardPage() {
     const tomorrow = new Date();
     tomorrow.setDate(today.getDate() + 1);
     const toIso = (d: Date) => d.toISOString().split('T')[0];
-    Promise.all([fetchDay(toIso(today)), fetchDay(toIso(tomorrow))])
+    Promise.all([api.getPlanningDay(toIso(today)), api.getPlanningDay(toIso(tomorrow))])
       .then(([t, tm]) => {
         setTodayData(t);
         setTomorrowData(tm);

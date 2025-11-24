@@ -1,29 +1,15 @@
 import { useEffect, useState } from 'react';
-
-async function fetchReview(date: string) {
-  const res = await fetch(`/review/day?date=${encodeURIComponent(date)}`);
-  if (!res.ok) throw new Error(await res.text());
-  return res.json();
-}
-
-async function fetchDeviation(date: string) {
-  const res = await fetch(`/analytics/deviation?date=${encodeURIComponent(date)}`);
-  if (!res.ok) throw new Error(await res.text());
-  return res.json();
-}
+import { api } from '../../lib/api';
 
 export default function ReviewPage() {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [data, setData] = useState<any>(null);
-  const [deviation, setDeviation] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    Promise.all([fetchReview(selectedDate), fetchDeviation(selectedDate)])
-      .then(([d, dev]) => {
-        setData(d);
-        setDeviation(dev);
-      })
+    api
+      .getReviewDay(selectedDate)
+      .then((d) => setData(d))
       .catch((err) => setError(err.message));
   }, [selectedDate]);
 
@@ -52,7 +38,7 @@ export default function ReviewPage() {
           <p className="text-slate-700">{data?.planCritique?.critique || 'No critique'}</p>
           <h3 className="font-semibold mt-4">Deviation</h3>
           <p className="text-slate-700">
-            Focus delta: {deviation?.deltaFocusMinutes}m | Tasks delta: {deviation?.deltaTasksCount}
+            Focus delta: {data?.deviation?.deltaFocusMinutes}m | Tasks delta: {data?.deviation?.deltaTasksCount}
           </p>
         </div>
       </div>
