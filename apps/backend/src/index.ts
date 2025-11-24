@@ -12,6 +12,8 @@ import screenTimeRouter from './routes/screenTime';
 import focusBlocksRouter from './routes/focusBlocks';
 import aiRouter from './routes/ai';
 import cronAggregateRouter from './routes/cronAggregate';
+import reviewRouter from './routes/review';
+import settingsRouter from './routes/settings';
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -33,6 +35,8 @@ app.use('/screen-time', screenTimeRouter);
 app.use('/focus-blocks', focusBlocksRouter);
 app.use('/ai', aiRouter);
 app.use('/cron', cronAggregateRouter);
+app.use('/review', reviewRouter);
+app.use('/', settingsRouter);
 app.use(userRouter);
 
 // Simple error handler
