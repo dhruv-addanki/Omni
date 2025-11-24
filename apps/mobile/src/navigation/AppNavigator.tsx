@@ -8,6 +8,7 @@ import ReviewScreen from '../screens/ReviewScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import AlarmScreen from '../screens/AlarmScreen';
 import WakeUpScreen from '../screens/WakeUpScreen';
+import PlanTomorrowScreen from '../screens/PlanTomorrowScreen';
 
 export type RootStackParamList = {
   Auth: undefined;
@@ -25,6 +26,7 @@ export type AppTabParamList = {
   Alarm: undefined;
   Review: undefined;
   Profile: undefined;
+  Plan: undefined;
 };
 
 const RootStack = createNativeStackNavigator<RootStackParamList>();
@@ -36,6 +38,7 @@ function HomeTabs() {
     <Tabs.Navigator>
       <Tabs.Screen name="Today" component={TodayScreen} />
       <Tabs.Screen name="Alarm" component={AlarmScreen} />
+       <Tabs.Screen name="Plan" component={PlanTomorrowScreen} options={{ title: 'Plan' }} />
       <Tabs.Screen name="Review" component={ReviewScreen} />
       <Tabs.Screen name="Profile" component={ProfileScreen} />
     </Tabs.Navigator>

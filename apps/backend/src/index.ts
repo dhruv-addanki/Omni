@@ -7,6 +7,7 @@ import alarmsRouter from './routes/alarms';
 import dayPlanRouter from './routes/dayPlan';
 import cronRouter from './routes/cron';
 import analyticsRouter from './routes/analytics';
+import planningRouter from './routes/planning';
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -23,6 +24,7 @@ app.use('/alarms', alarmsRouter);
 app.use('/day-plan', dayPlanRouter);
 app.use('/cron', cronRouter);
 app.use('/analytics', analyticsRouter);
+app.use('/planning', planningRouter);
 app.use(userRouter);
 
 // Simple error handler
