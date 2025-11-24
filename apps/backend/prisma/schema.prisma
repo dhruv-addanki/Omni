@@ -52,6 +52,7 @@ model User {
   screenTimeEvents       ScreenTimeEvent[]
   dailyReflections       DailyReflection[]
   integrationConnections IntegrationConnection[]
+  dayPlanConfirmations   DayPlanConfirmation[]
 }
 
 model AlarmSetting {
