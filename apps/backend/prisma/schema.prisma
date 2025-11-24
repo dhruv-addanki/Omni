@@ -41,6 +41,18 @@ enum AppCategory {
   OTHER
 }
 
+enum Platform {
+  MOBILE
+  DESKTOP
+}
+
+enum FocusBlockStatus {
+  PLANNED
+  ACTIVE
+  COMPLETED
+  ABORTED
+}
+
 enum IntegrationProvider {
   GOOGLE_CALENDAR
   OUTLOOK_CALENDAR
@@ -117,6 +129,10 @@ model FocusBlock {
   plannedEnd   DateTime
   actualStart  DateTime?
   actualEnd    DateTime?
+  expectedApp  String?
+  expectedCategory AppCategory?
+  distractionMinutes Int @default(0)
+  status       FocusBlockStatus @default(PLANNED)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -126,12 +142,15 @@ model FocusBlock {
   @@index([userId])
   @@index([taskId])
   @@index([userId, plannedStart])
+  @@index([userId, status])
 }
 
 model ScreenTimeEvent {
   id         String      @id @default(uuid())
   userId     String
+  platform   Platform    @default(MOBILE)
   appName    String
+  bundleId   String?
   appCategory AppCategory
   startedAt  DateTime
   endedAt    DateTime
@@ -142,6 +161,21 @@ model ScreenTimeEvent {
   @@index([userId])
   @@index([userId, startedAt])
 }
+
+model AppCategoryMap {
+  id        String      @id @default(uuid())
+  userId    String?
+  appName   String?
+  bundleId  String?
+  category  AppCategory
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([bundleId])
+  @@index([appName])
 
 model DailyReflection {
   id         String    @id @default(uuid())
