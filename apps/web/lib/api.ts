@@ -47,5 +47,12 @@ export const api = {
   getDashboard: () => request<DashboardData>('/me/dashboard'),
   getWeekly: () => request<WeeklyAnalyticsDay[]>('/analytics/weekly'),
   getReflection: (date: string) => request<{ rating: number; notes: string; aiSummary?: string | null }>(`/reflections/${date}`),
-  getTasksForDate: (date: string) => request<{ tasks: Array<{ id: string; title: string; status: string; scheduledStart?: string; scheduledEnd?: string; actualEnd?: string }> }>(`/analytics/tasks?date=${date}`)
+  getTasksForDate: (date: string) => request<{ tasks: Array<{ id: string; title: string; status: string; scheduledStart?: string; scheduledEnd?: string; actualEnd?: string }> }>(`/analytics/tasks?date=${date}`),
+  getDayTimeline: (date: string) =>
+    request<{
+      plannedBlocks: Array<{ id: string; start: string; end: string; taskId?: string | null }>;
+      actualBlocks: Array<{ id: string; start: string; end: string; taskId?: string | null }>;
+      screenTimeEvents: Array<{ id: string; appName: string; category: string; start: string; end: string }>;
+      summary: { plannedMinutes: number; actualMinutes: number; distractionMinutesDuringFocus: number };
+    }>(`/analytics/day-timeline?date=${date}`)
 };

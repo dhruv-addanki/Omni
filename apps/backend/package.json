@@ -17,6 +17,7 @@
     "express": "^4.18.2",
     "jsonwebtoken": "^9.0.2",
     "@supabase/supabase-js": "^2.45.4",
+    "openai": "^4.67.3",
     "zod": "^3.22.4"
   },
   "devDependencies": {

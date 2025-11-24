@@ -1,14 +1,7 @@
 import prisma from '../lib/prisma';
 import { computeDailyStats } from './analytics';
 import { parseLocalDateString } from '../utils/dates';
-
-// Placeholder AI client. Replace with real implementation later.
-const aiClient = {
-  async generateText(prompt: string): Promise<string> {
-    // TODO: integrate with actual AI provider (OpenAI, etc.)
-    return `AI Summary:\n${prompt.slice(0, 200)}...`;
-  }
-};
+import { generateText } from '../lib/aiClient';
 
 export async function generateDailySummary(userId: string, dateString: string) {
   const date = parseLocalDateString(dateString) || new Date(dateString);
@@ -23,7 +16,7 @@ export async function generateDailySummary(userId: string, dateString: string) {
   const stats = await computeDailyStats(userId, date.toISOString());
 
   const prompt = buildPrompt({ reflection, stats, date });
-  const aiSummary = await aiClient.generateText(prompt);
+  const aiSummary = await generateText(prompt);
 
   if (!reflection) {
     // If no reflection exists, create a placeholder one to store the summary.

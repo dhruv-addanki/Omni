@@ -12,3 +12,7 @@ export function parseLocalDateString(dateString: string): Date | null {
   const [year, month, day] = parts;
   return new Date(year, month - 1, day);
 }
+
+export function toIso(date: Date) {
+  return date.toISOString();
+}

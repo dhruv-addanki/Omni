@@ -2,6 +2,7 @@ import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import Layout from '../../components/Layout';
 import { api } from '../../lib/api';
+import Timeline from '../../components/Timeline';
 
 interface TaskItem {
   id: string;
@@ -17,6 +18,12 @@ export default function DailyDetailPage() {
   const { date } = router.query as { date?: string };
   const [tasks, setTasks] = useState<TaskItem[]>([]);
   const [reflection, setReflection] = useState<{ rating: number; notes: string; aiSummary?: string | null } | null>(null);
+  const [timeline, setTimeline] = useState<null | {
+    plannedBlocks: any[];
+    actualBlocks: any[];
+    screenTimeEvents: any[];
+    summary: { plannedMinutes: number; actualMinutes: number; distractionMinutesDuringFocus: number };
+  }>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -25,12 +32,14 @@ export default function DailyDetailPage() {
     const load = async () => {
       setLoading(true);
       try {
-        const [taskRes, reflectionRes] = await Promise.all([
+        const [taskRes, reflectionRes, timelineRes] = await Promise.all([
           api.getTasksForDate(date),
-          api.getReflection(date)
+          api.getReflection(date).catch(() => null),
+          api.getDayTimeline(date)
         ]);
         setTasks(taskRes.tasks || []);
-        setReflection(reflectionRes);
+        setReflection(reflectionRes || null);
+        setTimeline(timelineRes);
       } catch (err) {
         setError((err as Error).message);
       } finally {
@@ -51,6 +60,31 @@ export default function DailyDetailPage() {
         {error && <div className="text-red-500">{error}</div>}
         {!loading && !error && (
           <>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div className="bg-white border border-slate-200 rounded p-4">
+                <div className="text-sm text-slate-500">Planned focus minutes</div>
+                <div className="text-2xl font-bold">{timeline?.summary.plannedMinutes ?? 0}</div>
+              </div>
+              <div className="bg-white border border-slate-200 rounded p-4">
+                <div className="text-sm text-slate-500">Actual focus minutes</div>
+                <div className="text-2xl font-bold">{timeline?.summary.actualMinutes ?? 0}</div>
+              </div>
+              <div className="bg-white border border-slate-200 rounded p-4">
+                <div className="text-sm text-slate-500">Distraction minutes during focus</div>
+                <div className="text-2xl font-bold">
+                  {timeline?.summary.distractionMinutesDuringFocus ?? 0}
+                </div>
+              </div>
+            </div>
+
+            {timeline && (
+              <Timeline
+                plannedBlocks={timeline.plannedBlocks}
+                actualBlocks={timeline.actualBlocks}
+                screenTimeEvents={timeline.screenTimeEvents}
+              />
+            )}
+
             <div className="bg-white border border-slate-200 rounded p-4">
               <h3 className="font-semibold mb-2">Tasks</h3>
               <div className="flex flex-col gap-2">
