@@ -81,6 +81,21 @@ enum HabitOperator {
   EQ
 }
 
+enum JobStatus {
+  PENDING
+  SCHEDULED
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum JobType {
+  CALENDAR_SYNC
+  TASK_SYNC
+  AI_JOB
+  DAILY_AGGREGATION
+}
+
 enum IntegrationProvider {
   GOOGLE_CALENDAR
   OUTLOOK_CALENDAR
@@ -303,6 +318,59 @@ model HabitStatus {
   @@unique([userId, habitKey, date])
   @@index([userId, date])
   @@index([userId, habitKey])
+}
+
+model Job {
+  id          String     @id @default(uuid())
+  userId      String?
+  type        JobType
+  status      JobStatus  @default(PENDING)
+  attempts    Int        @default(0)
+  payload     Json
+  scheduledAt DateTime   @default(now())
+  error       String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([type, status])
+  @@index([scheduledAt])
+}
+
+model FeatureFlag {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  enabled   Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model FeatureFlagOverride {
+  id        String   @id @default(uuid())
+  flagId    String
+  userId    String
+  enabled   Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  flag FeatureFlag @relation(fields: [flagId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([flagId, userId])
+  @@index([userId])
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  userId     String
+  action     String
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
 }
 
 model DailyReflection {

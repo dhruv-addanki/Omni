@@ -14,6 +14,9 @@ import aiRouter from './routes/ai';
 import cronAggregateRouter from './routes/cronAggregate';
 import reviewRouter from './routes/review';
 import settingsRouter from './routes/settings';
+import cronJobsRouter from './routes/cronJobs';
+import webhooksRouter from './routes/webhooks';
+import adminFeatureFlagsRouter from './routes/adminFeatureFlags';
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -35,8 +38,11 @@ app.use('/screen-time', screenTimeRouter);
 app.use('/focus-blocks', focusBlocksRouter);
 app.use('/ai', aiRouter);
 app.use('/cron', cronAggregateRouter);
+app.use('/cron', cronJobsRouter);
 app.use('/review', reviewRouter);
+app.use('/', webhooksRouter);
 app.use('/', settingsRouter);
+app.use('/', adminFeatureFlagsRouter);
 app.use(userRouter);
 
 // Simple error handler
@@ -50,3 +56,5 @@ app.listen(port, () => {
   // eslint-disable-next-line no-console
   console.log(`Backend listening on port ${port}`);
 });
+
+export default app;

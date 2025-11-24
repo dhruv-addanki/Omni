@@ -12,6 +12,7 @@ import {
 } from '../services/aiCoach';
 import { AIJobStatus, AIJobType } from '@prisma/client';
 import { generateWeeklyChangeBrief } from '../services/aiCoach';
+import prisma from '../lib/prisma';
 
 const router = Router();
 router.use(requireSupabaseAuth);
