@@ -1,6 +1,7 @@
 import { Task } from '@prisma/client';
 import prisma from '../lib/prisma';
 import { getDayRange, parseLocalDateString } from '../utils/dates';
+import { upsertExternalTaskIntoOmniTask } from './externalTasks';
 
 interface DraftBlock {
   start: Date;
@@ -34,7 +35,7 @@ export async function generateDraftDayPlan(userId: string, dateString: string): 
   const { start, end } = getDayRange(parsed);
   const { start: workingStart, end: workingEnd } = toWorkingHours(start);
 
-  const [events, tasks] = await Promise.all([
+  const [events, externalTasks] = await Promise.all([
     prisma.externalCalendarEvent.findMany({
       where: {
         userId,
@@ -45,11 +46,28 @@ export async function generateDraftDayPlan(userId: string, dateString: string): 
       },
       orderBy: { start: 'asc' }
     }),
-    prisma.task.findMany({
-      where: { userId, status: 'TODO' },
-      orderBy: [{ scheduledEnd: 'asc' }, { createdAt: 'asc' }]
+    prisma.externalTask.findMany({
+      where: { userId },
+      orderBy: [{ due: 'asc' }, { createdAt: 'asc' }]
     })
   ]);
+
+  // Ensure external tasks are mirrored into the Task table for planning.
+  for (const ext of externalTasks) {
+    await upsertExternalTaskIntoOmniTask(userId, ext.provider, {
+      externalId: ext.externalId,
+      title: ext.title,
+      status: ext.status,
+      due: ext.due || undefined,
+      projectName: ext.projectName || undefined,
+      dataJSON: (ext.dataJSON as Record<string, unknown> | null) || undefined
+    });
+  }
+
+  const tasks = await prisma.task.findMany({
+    where: { userId, status: 'TODO' },
+    orderBy: [{ scheduledEnd: 'asc' }, { createdAt: 'asc' }]
+  });
 
   // Build free windows from calendar events within working hours.
   const windows: Array<{ start: Date; end: Date }> = [];

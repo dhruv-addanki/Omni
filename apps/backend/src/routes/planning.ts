@@ -17,6 +17,10 @@ planningRouter.post('/draft', async (req, res) => {
   if (!parsed.success) {
     return res.status(400).json({ error: 'Invalid input', details: parsed.error.flatten() });
   }
+  const parsedDate = parseLocalDateString(parsed.data.date) || new Date(parsed.data.date);
+  if (!parsedDate || Number.isNaN(parsedDate.getTime())) {
+    return res.status(400).json({ error: 'Invalid date format, expected YYYY-MM-DD' });
+  }
   const draft = await generateDraftDayPlan(req.user!.userId, parsed.data.date);
   return res.json(draft);
 });
@@ -90,13 +94,30 @@ planningRouter.post('/apply', async (req, res) => {
   });
 
   await prisma.dayPlanTask.deleteMany({ where: { dayPlanId: plan.id } });
+  const spanByTask = new Map<string, { start: Date; end: Date }>();
+  for (const b of blocks) {
+    if (!b.taskId) continue;
+    const startDate = new Date(b.start);
+    const endDate = new Date(b.end);
+    const existing = spanByTask.get(b.taskId);
+    if (!existing) {
+      spanByTask.set(b.taskId, { start: startDate, end: endDate });
+    } else {
+      spanByTask.set(b.taskId, {
+        start: existing.start < startDate ? existing.start : startDate,
+        end: existing.end > endDate ? existing.end : endDate
+      });
+    }
+  }
   if (taskIds.length) {
     await prisma.dayPlanTask.createMany({
       data: taskIds.map((id, idx) => ({
         dayPlanId: plan.id,
         taskId: id,
         isTopTask: true,
-        order: idx
+        order: idx,
+        plannedStart: spanByTask.get(id)?.start,
+        plannedEnd: spanByTask.get(id)?.end
       }))
     });
   }
