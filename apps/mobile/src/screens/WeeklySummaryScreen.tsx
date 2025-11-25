@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, ActivityIndicator, Alert, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, FlatList, ActivityIndicator, Alert } from 'react-native';
 import { fetchWeeklyAnalytics, fetchWeeklyChangeBrief } from '../api/analytics';
 
 function todayDateString() {
@@ -14,6 +14,7 @@ export default function WeeklySummaryScreen() {
   const [data, setData] = useState<{ metrics: any[]; streaks: any } | null>(null);
   const [brief, setBrief] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -22,8 +23,11 @@ export default function WeeklySummaryScreen() {
       setData(analytics);
       const change = await fetchWeeklyChangeBrief(todayDateString());
       setBrief(change.brief);
+      setError(null);
     } catch (err) {
-      Alert.alert('Error', (err as Error).message || 'Failed to load weekly summary');
+      const msg = (err as Error).message || 'Failed to load weekly summary';
+      setError(msg);
+      Alert.alert('Error', msg);
     } finally {
       setLoading(false);
     }
@@ -42,9 +46,10 @@ export default function WeeklySummaryScreen() {
     );
   }
 
-  return (
-    <ScrollView style={styles.container}>
+  const header = (
+    <View>
       <Text style={styles.title}>Weekly summary</Text>
+      {error && <Text style={styles.error}>{error}</Text>}
       {brief && (
         <View style={styles.card}>
           <Text style={styles.cardTitle}>What changed this week?</Text>
@@ -57,22 +62,26 @@ export default function WeeklySummaryScreen() {
         <Text style={styles.cardBody}>Day plan: {data?.streaks.dayPlan || 0} days</Text>
         <Text style={styles.cardBody}>Focus 60+: {data?.streaks.focus60 || 0} days</Text>
       </View>
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>Last 7 days</Text>
-        <FlatList
-          data={data?.metrics || []}
-          keyExtractor={(item) => item.date}
-          renderItem={({ item }) => (
-            <View style={styles.row}>
-              <Text style={styles.date}>{item.date}</Text>
-              <Text style={styles.stat}>Tasks: {item.tasksCompleted}/{item.tasksPlanned}</Text>
-              <Text style={styles.stat}>Focus: {item.focusMinutes}m</Text>
-              <Text style={styles.stat}>Distractions: {item.distractionMinutes}m</Text>
-            </View>
-          )}
-        />
-      </View>
-    </ScrollView>
+      <Text style={styles.sectionTitle}>Last 7 days</Text>
+    </View>
+  );
+
+  return (
+    <View style={styles.container}>
+      <FlatList
+        data={data?.metrics || []}
+        keyExtractor={(item) => item.date}
+        ListHeaderComponent={header}
+        renderItem={({ item }) => (
+          <View style={styles.card}>
+            <Text style={styles.date}>{item.date}</Text>
+            <Text style={styles.stat}>Tasks: {item.tasksCompleted}/{item.tasksPlanned}</Text>
+            <Text style={styles.stat}>Focus: {item.focusMinutes}m</Text>
+            <Text style={styles.stat}>Distractions: {item.distractionMinutes}m</Text>
+          </View>
+        )}
+      />
+    </View>
   );
 }
 
@@ -80,6 +89,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, padding: 16, backgroundColor: '#f8fafc' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   title: { fontSize: 22, fontWeight: '700', marginBottom: 12 },
+  sectionTitle: { fontSize: 16, fontWeight: '700', marginVertical: 8 },
   card: {
     backgroundColor: '#fff',
     borderRadius: 12,
@@ -90,7 +100,7 @@ const styles = StyleSheet.create({
   },
   cardTitle: { fontSize: 16, fontWeight: '700', marginBottom: 6 },
   cardBody: { color: '#475569' },
-  row: { paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: '#e2e8f0' },
   date: { fontWeight: '700' },
-  stat: { color: '#475569' }
+  stat: { color: '#475569' },
+  error: { color: 'red', marginBottom: 8 }
 });

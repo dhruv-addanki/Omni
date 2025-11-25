@@ -4,7 +4,7 @@ import prisma from '../lib/prisma';
 export async function refreshIntegrationToken(userId: string, provider: string) {
   const conn = await prisma.integrationConnection.findFirst({ where: { userId, provider: provider as any } });
   if (!conn) throw new Error('Integration not found');
-  // TODO: decrypt refreshToken, call provider, rotate tokens, re-encrypt before storing.
+  // TODO: decrypt refreshToken using TOKEN_ENCRYPTION_KEY or KMS, call provider, rotate tokens, re-encrypt before storing.
   const refreshedAccessToken = conn.accessToken; // placeholder
   await prisma.integrationConnection.update({
     where: { userId_provider: { userId, provider: provider as any } },

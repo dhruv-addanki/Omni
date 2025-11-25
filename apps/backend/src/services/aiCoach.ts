@@ -154,6 +154,22 @@ export async function generateHabitInsights(userId: string, endDate: string, day
   return insight;
 }
 
+function buildNextActionFallback(ctx: DayContext) {
+  const inProgress = ctx.tasks.find((t) => t.status === 'IN_PROGRESS');
+  const todo = ctx.tasks.find((t) => t.status === 'TODO');
+  if (inProgress) {
+    return `Pick back up "${inProgress.title}" for a focused 25-minute block. Minimize distractions.`;
+  }
+  if (todo) {
+    return `Start "${todo.title}" now and work on it for the next 20-30 minutes.`;
+  }
+  if (ctx.focus.actualMinutes < ctx.focus.plannedMinutes) {
+    const gap = Math.min(Math.max(ctx.focus.plannedMinutes - ctx.focus.actualMinutes, 15), 60);
+    return `Use the next ${gap} minutes for focused work to close your plan for today.`;
+  }
+  return 'No urgent tasks remain. Take five minutes to tidy your notes or set up tomorrow’s plan.';
+}
+
 export async function generateNextBestAction(userId: string, date: string) {
   const ctx = await getDayContext(userId, date);
   const prompt = [
@@ -163,7 +179,13 @@ export async function generateNextBestAction(userId: string, date: string) {
     safetyInstructions(),
     'Return 1-2 bullets with a single concrete action and a short why. <60 words.'
   ].join('\n');
-  return generateText(prompt, { maxTokens: 120, temperature: 0.5 });
+  try {
+    return await generateText(prompt, { maxTokens: 120, temperature: 0.5 });
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error('generateNextBestAction failed, returning fallback', err);
+    return buildNextActionFallback(ctx);
+  }
 }
 
 export async function rewriteTasks(userId: string, taskIds: string[]) {
